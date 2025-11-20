@@ -71,7 +71,7 @@ extern uint32_t mldsa_native_repetitions;
 #define MLDSA87 4
 int main(int argc, const char*argv[]){
     uint64_t hdrbg_seed = 0;
-    unsigned int message_size = 69;
+    size_t message_size = 69;
     unsigned int mldsa44 = 0;
     unsigned int mldsa65 = 0;
     unsigned int mldsa87 = 0;
@@ -86,7 +86,13 @@ int main(int argc, const char*argv[]){
       const char*msgsize_str = "--msg-size=";
       if(0==memcmp(argv[i],msgsize_str,strlen(msgsize_str))){
         const char*msgsize_val_str = argv[i]+strlen(msgsize_str);
-        message_size = strtoul(msgsize_val_str,0,0);
+        char*end;
+        message_size = strtoull(msgsize_val_str,&end,0);
+        size_t factor=1;
+        if(*end=='K' || *end=='k') factor = 1024;
+        if(*end=='M' || *end=='m') factor = 1024*1024;
+        if(*end=='G' || *end=='g') factor = 1024*1024*1024;
+        message_size *= factor;
         continue;
       }
       const char*mldsa44_str = "mldsa44";
@@ -136,6 +142,7 @@ int main(int argc, const char*argv[]){
     }
 
     uint32_t err_code=0;
+    uint8_t*message=0;
     if(0 == (err_code = setjmp(main_exception_ctx))){
         uint8_t entropy[32] = {0};
         const uint8_t nonce[32] = {0};
@@ -170,8 +177,9 @@ int main(int argc, const char*argv[]){
         const unsigned int ctx_size = 0;
         printf("%u\n",mldsa_pset);
         printf("%u\n",ctx_size);
-        printf("%u\n",message_size);
-        uint8_t message[message_size];
+        printf("%lu\n",message_size);
+        message = malloc(message_size);
+        if(!message) throw_exception(__LINE__);
         //drbg_get_bytes(&ccore_deterministic_mode_ctx, message,sizeof(message));
         //for(unsigned int i = 0; i < message_size; i++){message[i] = 1+(i%8);}
         memset(message,0,message_size);
@@ -213,5 +221,8 @@ int main(int argc, const char*argv[]){
       //exception
       printf("EXCEPTION: %u (0x%x)\n",err_code,err_code);
     } 
+    if(message){
+      free(message);
+    }
     return 0;
 }
