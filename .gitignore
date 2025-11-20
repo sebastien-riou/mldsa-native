@@ -4,3 +4,9 @@ test/build
 .direnv
 # Downloaded ACVP test data
 test/.acvp-data/
+testvectors-gen/results
+*.a
+a.out
+*.tar.xz
+__pycache__
+*_git_ignore

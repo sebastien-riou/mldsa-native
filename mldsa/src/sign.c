@@ -343,6 +343,21 @@ __contract__(
 /* @[FIPS204, Appendix C].                                        */
 #define NONCE_UB ((UINT16_MAX - MLDSA_L) / MLDSA_L)
 
+#ifndef INSTRUMENATION
+  #define INSTRUMENATION 0
+#endif
+
+#if INSTRUMENTATION
+  #ifndef INSTRUMENTATION_DECL_DONE
+    #define INSTRUMENTATION_DECL_DONE
+    uint32_t mldsa_native_repetitions;
+  #endif
+  #define REPETIONS_INC() do{mldsa_native_repetitions++;}while(0)
+  #define REPETIONS_CLR() do{mldsa_native_repetitions=0;}while(0)
+#else
+  #define REPETIONS_INC()
+  #define REPETIONS_CLR()
+#endif
 /*************************************************
  * Name:        attempt_signature_generation
  *
@@ -389,6 +404,7 @@ __contract__(
   ensures(return_value == 0 || return_value == -1)
 )
 {
+  REPETIONS_INC();
   MLD_ALIGN uint8_t challenge_bytes[MLDSA_CTILDEBYTES];
   unsigned int n;
   mld_polyvecl y, z;
@@ -526,6 +542,7 @@ int crypto_sign_signature_internal(uint8_t sig[CRYPTO_BYTES], size_t *siglen,
                                    const uint8_t sk[CRYPTO_SECRETKEYBYTES],
                                    int externalmu)
 {
+  REPETIONS_CLR();
   int result;
   MLD_ALIGN uint8_t
       seedbuf[2 * MLDSA_SEEDBYTES + MLDSA_TRBYTES + 2 * MLDSA_CRHBYTES];

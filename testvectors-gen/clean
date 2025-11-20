@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -ex 
+
+rm -f a.out
+
+pushd hdrbg
+./clean
+popd

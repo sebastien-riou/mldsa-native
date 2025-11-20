@@ -1,0 +1,3 @@
+#!/bin/bash
+
+time ./a.out $1 --msg-size=$2 --hdrbg-seed=$3 ${@: 4} > results/aborts-$1-m$2-s$3.log

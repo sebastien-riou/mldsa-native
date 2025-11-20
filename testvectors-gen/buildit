@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -ex 
+
+rm -f a.out
+
+pushd hdrbg
+./buildit
+popd
+
+DEBUG_FLAGS="-g -Og"
+RELEASE_FLAGS=""
+FLAGS=$RELEASE_FLAGS
+gcc $FLAGS -I . -I hdrbg main.c hdrbg/libhdrbg.a
+./a.out mldsa87 $*
