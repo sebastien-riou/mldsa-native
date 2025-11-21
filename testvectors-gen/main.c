@@ -180,7 +180,7 @@ int main(int argc, const char*argv[]){
         printf("%lu\n",message_size);
         message = malloc(message_size);
         if(!message) throw_exception(__LINE__);
-        //drbg_get_bytes(&ccore_deterministic_mode_ctx, message,sizeof(message));
+        //drbg_get_bytes(&ccore_deterministic_mode_ctx, message,message_size);
         //for(unsigned int i = 0; i < message_size; i++){message[i] = 1+(i%8);}
         memset(message,0,message_size);
         uint8_t sig[sigsize];
@@ -188,17 +188,17 @@ int main(int argc, const char*argv[]){
         uint32_t sum_r=0;
         uint32_t n_aborts_z=0,n_aborts_r=0, n_aborts_t0=0,n_aborts_h=0;
         for(unsigned int i=0;i<1000*1000;i++){
-            //if(mldsa87_signature(sig,&sigsize,message, sizeof(message), 0, 0, sk)) throw_exception(__LINE__);
+            //if(mldsa87_signature(sig,&sigsize,message, message_size, 0, 0, sk)) throw_exception(__LINE__);
             switch(mldsa_pset){
-              case 44: if(mldsa44_signature(sig,&sigsize,message, sizeof(message), 0, 0, sk)){
+              case 44: if(mldsa44_signature(sig,&sigsize,message, message_size, 0, 0, sk)){
                   throw_exception(__LINE__);
                 }
                 break;
-              case 65: if(mldsa65_signature(sig,&sigsize,message, sizeof(message), 0, 0, sk)){
+              case 65: if(mldsa65_signature(sig,&sigsize,message, message_size, 0, 0, sk)){
                   throw_exception(__LINE__);
                 }
                 break;
-              case 87: if(mldsa87_signature(sig,&sigsize,message, sizeof(message), 0, 0, sk)){
+              case 87: if(mldsa87_signature(sig,&sigsize,message, message_size, 0, 0, sk)){
                   throw_exception(__LINE__);
                 }
                 break;
@@ -206,7 +206,7 @@ int main(int argc, const char*argv[]){
                 throw_exception(__LINE__);
             }
             //dump(&sig,sizeof(sig));
-            //if(mldsa87_verify(sig,sigsize,message, sizeof(message),0,0,pk)) throw_exception(__LINE__);
+            //if(mldsa87_verify(sig,sigsize,message, message_size,0,0,pk)) throw_exception(__LINE__);
             //printf("repetitions = %u\n",mldsa_native_repetitions);
             if(log_aborts){
               sum_z += n_aborts_z;
