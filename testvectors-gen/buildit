@@ -11,5 +11,6 @@ popd
 DEBUG_FLAGS="-g -Og"
 RELEASE_FLAGS=""
 FLAGS=$RELEASE_FLAGS
-gcc $FLAGS -I . -I hdrbg main.c hdrbg/libhdrbg.a
+cp ../examples/monolithic_build_multilevel_native/build/mldsa/mldsa_native.S.o .
+gcc $FLAGS -I . -I hdrbg main.c  mldsa_native.S.o hdrbg/libhdrbg.a
 #./a.out mldsa87 $*
