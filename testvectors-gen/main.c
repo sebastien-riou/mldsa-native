@@ -87,6 +87,9 @@ int PQCP_MLDSA_NATIVE_MLDSA87_verify(const uint8_t *sig, size_t siglen, const ui
 extern uint32_t PQCP_MLDSA_NATIVE_MLDSA44_mldsa_native_repetitions;
 extern uint32_t PQCP_MLDSA_NATIVE_MLDSA65_mldsa_native_repetitions;
 extern uint32_t PQCP_MLDSA_NATIVE_MLDSA87_mldsa_native_repetitions;
+extern uint32_t PQCP_MLDSA_NATIVE_MLDSA44_mldsa_native_repetitions_causes[4];
+extern uint32_t PQCP_MLDSA_NATIVE_MLDSA65_mldsa_native_repetitions_causes[4];
+extern uint32_t PQCP_MLDSA_NATIVE_MLDSA87_mldsa_native_repetitions_causes[4];
 
 
 void randombytes(uint8_t *buf, size_t n){
@@ -250,21 +253,25 @@ int main(int argc, const char*argv[]){
         for(unsigned int i=0;i<1000*1000;i++){
             //if(mldsa87_signature(sig,&sigsize,message, message_size, 0, 0, sk)) throw_exception(__LINE__);
             uint32_t mldsa_native_repetitions;
+            uint32_t*causes=0;
             switch(mldsa_pset){
               case 44: if(mldsa44_signature(sig,&sigsize,message, message_size, 0, 0, sk)){
                   throw_exception(__LINE__);
                 }
                 mldsa_native_repetitions=PQCP_MLDSA_NATIVE_MLDSA44_mldsa_native_repetitions;
+                causes = PQCP_MLDSA_NATIVE_MLDSA44_mldsa_native_repetitions_causes;
                 break;
               case 65: if(mldsa65_signature(sig,&sigsize,message, message_size, 0, 0, sk)){
                   throw_exception(__LINE__);
                 }
                 mldsa_native_repetitions=PQCP_MLDSA_NATIVE_MLDSA65_mldsa_native_repetitions;
+                causes = PQCP_MLDSA_NATIVE_MLDSA65_mldsa_native_repetitions_causes;
                 break;
               case 87: if(mldsa87_signature(sig,&sigsize,message, message_size, 0, 0, sk)){
                   throw_exception(__LINE__);
                 }
                 mldsa_native_repetitions=PQCP_MLDSA_NATIVE_MLDSA87_mldsa_native_repetitions;
+                causes = PQCP_MLDSA_NATIVE_MLDSA87_mldsa_native_repetitions_causes;
                 break;
               default:
                 throw_exception(__LINE__);
@@ -291,6 +298,10 @@ int main(int argc, const char*argv[]){
             }
             //printf("repetitions = %u\n",mldsa_native_repetitions);
             if(log_aborts){
+              n_aborts_z=causes[0];
+              n_aborts_r=causes[1];
+              n_aborts_t0=causes[2];
+              n_aborts_h=causes[3];
               sum_z += n_aborts_z;
               sum_r += n_aborts_r;
               printf("%2u, %2u, %2u, %2u, %2u, %5u, %5u\n",mldsa_native_repetitions,n_aborts_z,n_aborts_r, n_aborts_t0,n_aborts_h,sum_z,sum_r);

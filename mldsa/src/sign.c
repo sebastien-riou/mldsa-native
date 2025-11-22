@@ -351,9 +351,16 @@ __contract__(
   #ifndef INSTRUMENTATION_DECL_DONE
     #define INSTRUMENTATION_DECL_DONE
     uint32_t MLD_NAMESPACE(mldsa_native_repetitions);
+    uint32_t MLD_NAMESPACE(mldsa_native_repetitions_causes[4]);
   #endif
-  #define REPETIONS_INC() do{MLD_NAMESPACE(mldsa_native_repetitions)++;}while(0)
-  #define REPETIONS_CLR() do{MLD_NAMESPACE(mldsa_native_repetitions)=0;}while(0)
+  #define REPETIONS_INC(cause) do{\
+    MLD_NAMESPACE(mldsa_native_repetitions)++;\
+    MLD_NAMESPACE(mldsa_native_repetitions_causes)[cause]++;\
+  }while(0)
+  #define REPETIONS_CLR() do{\
+    MLD_NAMESPACE(mldsa_native_repetitions)=1;\
+    memset(MLD_NAMESPACE(mldsa_native_repetitions_causes),0,sizeof(MLD_NAMESPACE(mldsa_native_repetitions_causes)));\
+  }while(0)
 #else
   #define REPETIONS_INC()
   #define REPETIONS_CLR()
@@ -404,7 +411,6 @@ __contract__(
   ensures(return_value == 0 || return_value == -1)
 )
 {
-  REPETIONS_INC();
   MLD_ALIGN uint8_t challenge_bytes[MLDSA_CTILDEBYTES];
   unsigned int n;
   mld_polyvecl y, z;
@@ -454,6 +460,7 @@ __contract__(
   if (z_invalid)
   {
     res = -1; /* reject */
+    REPETIONS_INC(0);
     goto cleanup;
   }
 
@@ -475,6 +482,7 @@ __contract__(
   if (w0_invalid)
   {
     res = -1; /* reject */
+    REPETIONS_INC(1);
     goto cleanup;
   }
 
@@ -489,6 +497,7 @@ __contract__(
   if (h_invalid)
   {
     res = -1; /* reject */
+    REPETIONS_INC(2);
     goto cleanup;
   }
 
@@ -508,6 +517,7 @@ __contract__(
   if (n > MLDSA_OMEGA)
   {
     res = -1; /* reject */
+    REPETIONS_INC(3);
     goto cleanup;
   }
 
