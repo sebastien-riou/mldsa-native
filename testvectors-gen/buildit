@@ -16,7 +16,7 @@ FLAGS=$RELEASE_FLAGS
 #gcc $FLAGS -I . -I hdrbg main.c hdrbg/libhdrbg.a
 
 pushd ..
-./scripts/tests kat --cflags INSTRUMENTATION=1 --opt OPT --no-run
+./scripts/tests kat --cflags="-DINSTRUMENTATION=1" --opt OPT --no-run
 popd
 
 cp ../test/build/*.a .
