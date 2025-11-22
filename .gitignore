@@ -10,3 +10,4 @@ a.out
 *.tar.xz
 __pycache__
 *_git_ignore
+mldsa-tv-gen
