@@ -350,10 +350,10 @@ __contract__(
 #if INSTRUMENTATION
   #ifndef INSTRUMENTATION_DECL_DONE
     #define INSTRUMENTATION_DECL_DONE
-    uint32_t mldsa_native_repetitions;
+    uint32_t MLD_NAMESPACE(mldsa_native_repetitions);
   #endif
-  #define REPETIONS_INC() do{mldsa_native_repetitions++;}while(0)
-  #define REPETIONS_CLR() do{mldsa_native_repetitions=0;}while(0)
+  #define REPETIONS_INC() do{MLD_NAMESPACE(mldsa_native_repetitions)++;}while(0)
+  #define REPETIONS_CLR() do{MLD_NAMESPACE(mldsa_native_repetitions)=0;}while(0)
 #else
   #define REPETIONS_INC()
   #define REPETIONS_CLR()

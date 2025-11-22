@@ -6,33 +6,88 @@
 #include <string.h>
 
 #include "hdrbg.h"
-
-/* Three instances of mldsa-native for all security levels */
+/*
+// Three instances of mldsa-native for all security levels 
 #define MLD_CONFIG_FILE "multilevel_config.h"
 
-/* Include level-independent code */
+// Include level-independent code 
 #define MLD_CONFIG_MULTILEVEL_WITH_SHARED 1
-/* Keep level-independent headers at the end of monobuild file */
+// Keep level-independent headers at the end of monobuild file 
 #define MLD_CONFIG_MONOBUILD_KEEP_SHARED_HEADERS
 #define MLD_CONFIG_PARAMETER_SET 44
 #include "mldsa_native.c"
 #undef MLD_CONFIG_MULTILEVEL_WITH_SHARED
 #undef MLD_CONFIG_PARAMETER_SET
 
-/* Exclude level-independent code */
+// Exclude level-independent code 
 #define MLD_CONFIG_MULTILEVEL_NO_SHARED
 #define MLD_CONFIG_PARAMETER_SET 65
 #include "mldsa_native.c"
-/* `#undef` all headers at the and of the monobuild file */
+// `#undef` all headers at the and of the monobuild file 
 #undef MLD_CONFIG_MONOBUILD_KEEP_SHARED_HEADERS
 #undef MLD_CONFIG_PARAMETER_SET
 
 #define MLD_CONFIG_PARAMETER_SET 87
 #include "mldsa_native.c"
 #undef MLD_CONFIG_PARAMETER_SET
+*/
+
 
 #define MLD_CONFIG_API_CONSTANTS_ONLY
 #include <mldsa_native.h>
+
+#define mldsa44_keypair_internal PQCP_MLDSA_NATIVE_MLDSA44_keypair_internal
+int PQCP_MLDSA_NATIVE_MLDSA44_keypair_internal(uint8_t pk[MLDSA44_PUBLICKEYBYTES],
+                                 uint8_t sk[MLDSA44_SECRETKEYBYTES],
+                                 const uint8_t seed[MLDSA_SEEDBYTES]);
+
+#define mldsa65_keypair_internal PQCP_MLDSA_NATIVE_MLDSA65_keypair_internal
+int PQCP_MLDSA_NATIVE_MLDSA65_keypair_internal(uint8_t pk[MLDSA65_PUBLICKEYBYTES],
+                                 uint8_t sk[MLDSA65_SECRETKEYBYTES],
+                                 const uint8_t seed[MLDSA_SEEDBYTES]);
+
+#define mldsa87_keypair_internal PQCP_MLDSA_NATIVE_MLDSA87_keypair_internal
+int PQCP_MLDSA_NATIVE_MLDSA87_keypair_internal(uint8_t pk[MLDSA87_PUBLICKEYBYTES],
+                                 uint8_t sk[MLDSA87_SECRETKEYBYTES],
+                                 const uint8_t seed[MLDSA_SEEDBYTES]);
+
+#define mldsa44_signature PQCP_MLDSA_NATIVE_MLDSA44_signature
+int PQCP_MLDSA_NATIVE_MLDSA44_signature(uint8_t sig[MLDSA44_BYTES], size_t *siglen,
+                          const uint8_t *m, size_t mlen, const uint8_t *ctx,
+                          size_t ctxlen,
+                const uint8_t sk[MLDSA44_SECRETKEYBYTES]);
+
+#define mldsa65_signature PQCP_MLDSA_NATIVE_MLDSA65_signature
+int PQCP_MLDSA_NATIVE_MLDSA65_signature(uint8_t sig[MLDSA65_BYTES], size_t *siglen,
+                          const uint8_t *m, size_t mlen, const uint8_t *ctx,
+                          size_t ctxlen,
+                const uint8_t sk[MLDSA65_SECRETKEYBYTES]);
+
+#define mldsa87_signature PQCP_MLDSA_NATIVE_MLDSA87_signature
+int PQCP_MLDSA_NATIVE_MLDSA87_signature(uint8_t sig[MLDSA65_BYTES], size_t *siglen,
+                          const uint8_t *m, size_t mlen, const uint8_t *ctx,
+                          size_t ctxlen,
+                const uint8_t sk[MLDSA87_SECRETKEYBYTES]);
+
+#define mldsa44_verify PQCP_MLDSA_NATIVE_MLDSA44_verify
+int PQCP_MLDSA_NATIVE_MLDSA44_verify(const uint8_t *sig, size_t siglen, const uint8_t *m,
+                       size_t mlen, const uint8_t *ctx, size_t ctxlen,
+                       const uint8_t pk[MLDSA44_PUBLICKEYBYTES]);
+
+#define mldsa65_verify PQCP_MLDSA_NATIVE_MLDSA65_verify
+int PQCP_MLDSA_NATIVE_MLDSA65_verify(const uint8_t *sig, size_t siglen, const uint8_t *m,
+                       size_t mlen, const uint8_t *ctx, size_t ctxlen,
+                       const uint8_t pk[MLDSA65_PUBLICKEYBYTES]);
+
+#define mldsa87_verify PQCP_MLDSA_NATIVE_MLDSA87_verify
+int PQCP_MLDSA_NATIVE_MLDSA87_verify(const uint8_t *sig, size_t siglen, const uint8_t *m,
+                       size_t mlen, const uint8_t *ctx, size_t ctxlen,
+                       const uint8_t pk[MLDSA87_PUBLICKEYBYTES]);
+
+extern uint32_t PQCP_MLDSA_NATIVE_MLDSA44_mldsa_native_repetitions;
+extern uint32_t PQCP_MLDSA_NATIVE_MLDSA65_mldsa_native_repetitions;
+extern uint32_t PQCP_MLDSA_NATIVE_MLDSA87_mldsa_native_repetitions;
+
 
 void randombytes(uint8_t *buf, size_t n){
   memset(buf,0,n);//we want deterministic mode, not hedged mode.
@@ -65,7 +120,6 @@ jmp_buf*set_exception_ctx(jmp_buf*new_exception_ctx){
 void throw_exception(uint32_t err_code){
   longjmp(*exception_ctx,err_code);
 }
-extern uint32_t mldsa_native_repetitions;
 #define MLDSA44 1
 #define MLDSA65 2
 #define MLDSA87 4
@@ -76,6 +130,7 @@ int main(int argc, const char*argv[]){
     unsigned int mldsa65 = 0;
     unsigned int mldsa87 = 0;
     unsigned int log_aborts = 1;
+    unsigned int verify = 0;
     for(int i=1;i<argc;i++){
       const char*seed_str = "--hdrbg-seed=";
       if(0==memcmp(argv[i],seed_str,strlen(seed_str))){
@@ -108,6 +163,11 @@ int main(int argc, const char*argv[]){
       const char*mldsa87_str = "mldsa87";
       if(0==memcmp(argv[i],mldsa87_str,strlen(mldsa87_str))){
         mldsa87 = 1;
+        continue;
+      }
+      const char*verify_str = "--verify";
+      if(0==memcmp(argv[i],verify_str,strlen(verify_str))){
+        verify = 1;
         continue;
       }
       printf("ERROR unsupported command line argument: '%s'\n",argv[i]);
@@ -189,24 +249,46 @@ int main(int argc, const char*argv[]){
         uint32_t n_aborts_z=0,n_aborts_r=0, n_aborts_t0=0,n_aborts_h=0;
         for(unsigned int i=0;i<1000*1000;i++){
             //if(mldsa87_signature(sig,&sigsize,message, message_size, 0, 0, sk)) throw_exception(__LINE__);
+            uint32_t mldsa_native_repetitions;
             switch(mldsa_pset){
               case 44: if(mldsa44_signature(sig,&sigsize,message, message_size, 0, 0, sk)){
                   throw_exception(__LINE__);
                 }
+                mldsa_native_repetitions=PQCP_MLDSA_NATIVE_MLDSA44_mldsa_native_repetitions;
                 break;
               case 65: if(mldsa65_signature(sig,&sigsize,message, message_size, 0, 0, sk)){
                   throw_exception(__LINE__);
                 }
+                mldsa_native_repetitions=PQCP_MLDSA_NATIVE_MLDSA65_mldsa_native_repetitions;
                 break;
               case 87: if(mldsa87_signature(sig,&sigsize,message, message_size, 0, 0, sk)){
                   throw_exception(__LINE__);
                 }
+                mldsa_native_repetitions=PQCP_MLDSA_NATIVE_MLDSA87_mldsa_native_repetitions;
                 break;
               default:
                 throw_exception(__LINE__);
             }
             //dump(&sig,sizeof(sig));
             //if(mldsa87_verify(sig,sigsize,message, message_size,0,0,pk)) throw_exception(__LINE__);
+            if(verify){
+              switch(mldsa_pset){
+                case 44: if(mldsa44_verify(sig,sigsize,message, message_size, 0, 0, pk)){
+                    throw_exception(__LINE__);
+                  }
+                  break;
+                case 65: if(mldsa65_verify(sig,sigsize,message, message_size, 0, 0, pk)){
+                    throw_exception(__LINE__);
+                  }
+                  break;
+                case 87: if(mldsa87_verify(sig,sigsize,message, message_size, 0, 0, pk)){
+                    throw_exception(__LINE__);
+                  }
+                  break;
+                default:
+                  throw_exception(__LINE__);
+              }
+            }
             //printf("repetitions = %u\n",mldsa_native_repetitions);
             if(log_aborts){
               sum_z += n_aborts_z;
