@@ -2,7 +2,7 @@
 
 set -ex 
 
-rm -f a.out
+./clean
 
 pushd hdrbg
 ./buildit
@@ -15,6 +15,11 @@ FLAGS=$RELEASE_FLAGS
 #gcc $FLAGS -DMLD_FORCE_X86_64 -mavx2 -mbmi2 -I . -I hdrbg main.c  mldsa_native.S.o hdrbg/libhdrbg.a
 #gcc $FLAGS -I . -I hdrbg main.c hdrbg/libhdrbg.a
 
-gcc $FLAGS -I . -I hdrbg main.c hdrbg/libhdrbg.a -L../test/build -lmldsa44  -lmldsa65 -lmldsa87
+pushd ..
+./scripts/tests kat --cflags INSTRUMENTATION=1 --opt OPT --no-run
+popd
+
+cp ../test/build/*.a .
+gcc $FLAGS -I . -I hdrbg main.c hdrbg/libhdrbg.a -L. -lmldsa44  -lmldsa65 -lmldsa87 -o mldsa-tv-gen
 
 #./a.out mldsa87 $*

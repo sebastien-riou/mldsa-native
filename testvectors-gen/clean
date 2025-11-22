@@ -2,7 +2,8 @@
 
 set -ex 
 
-rm -f a.out
+rm -f mldsa-tv-gen libmldsa44.a libmldsa65.a libmldsa87.a
+rm -f ../test/build/*.a
 
 pushd hdrbg
 ./clean
