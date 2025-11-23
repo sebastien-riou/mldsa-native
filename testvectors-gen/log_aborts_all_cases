@@ -7,4 +7,4 @@ HDRBG_SEED=$1
 ./log_aborts_all_msg_sizes 65 $HDRBG_SEED ${@: 2}
 ./log_aborts_all_msg_sizes 87 $HDRBG_SEED ${@: 2}
 
-echo "All data generated for hdrbg seed $HDRBG"
+echo "All data generated for hdrbg seed $HDRBG_SEED"
