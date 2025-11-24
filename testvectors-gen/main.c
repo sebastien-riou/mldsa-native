@@ -134,6 +134,34 @@ int main(int argc, const char*argv[]){
     unsigned int mldsa87 = 0;
     unsigned int log_aborts = 1;
     unsigned int verify = 0;
+    uint64_t ntrials = 1000*1000;
+    unsigned int min_repetitions = 1;
+/*
+    {
+      uint8_t entropy[32] = {0};
+      const uint8_t nonce[32] = {0};
+      struct hdrbg_t *drbg = hdrbg_init2(0,entropy,sizeof entropy, nonce, sizeof nonce,0,0);
+      if(NULL==drbg) throw_exception(__LINE__);
+      struct hdrbg_t drbg1,drbg2,drbg3,drbg4;
+      memcpy(&drbg1,drbg,sizeof(struct hdrbg_t));
+      memcpy(&drbg2,drbg,sizeof(struct hdrbg_t));
+      memcpy(&drbg3,drbg,sizeof(struct hdrbg_t));
+      memcpy(&drbg4,drbg,sizeof(struct hdrbg_t));
+      uint8_t tmp[4];
+      uint8_t add_input=1;
+      hdrbg_fill2(&drbg1,0,tmp,sizeof tmp,&add_input,1);
+      dump(&tmp,sizeof tmp);
+      add_input=2;
+      hdrbg_fill2(&drbg2,0,tmp,sizeof tmp,&add_input,1);
+      dump(&tmp,sizeof tmp);
+      add_input=2;
+      hdrbg_fill2(&drbg3,0,tmp,sizeof tmp,&add_input,1);
+      dump(&tmp,sizeof tmp);
+      add_input=1;
+      hdrbg_fill2(&drbg4,0,tmp,sizeof tmp,&add_input,1);
+      dump(&tmp,sizeof tmp);
+    }
+*/
     for(int i=1;i<argc;i++){
       const char*seed_str = "--hdrbg-seed=";
       if(0==memcmp(argv[i],seed_str,strlen(seed_str))){
@@ -151,6 +179,24 @@ int main(int argc, const char*argv[]){
         if(*end=='M' || *end=='m') factor = 1024*1024;
         if(*end=='G' || *end=='g') factor = 1024*1024*1024;
         message_size *= factor;
+        continue;
+      }
+      const char*ntrials_str = "--n-trials=";
+      if(0==memcmp(argv[i],ntrials_str,strlen(ntrials_str))){
+        const char*ntrials_val_str = argv[i]+strlen(ntrials_str);
+        char*end;
+        ntrials = strtoull(ntrials_val_str,&end,0);
+        size_t factor=1;
+        if(*end=='K' || *end=='k') factor = 1024;
+        if(*end=='M' || *end=='m') factor = 1024*1024;
+        if(*end=='G' || *end=='g') factor = 1024*1024*1024;
+        ntrials *= factor;
+        continue;
+      }
+      const char*min_repetitions_str = "--min-repetitions=";
+      if(0==memcmp(argv[i],min_repetitions_str,strlen(min_repetitions_str))){
+        const char*min_repetitions_val_str = argv[i]+strlen(min_repetitions_str);
+        min_repetitions = strtoull(min_repetitions_val_str,0,0);
         continue;
       }
       const char*mldsa44_str = "mldsa44";
@@ -207,109 +253,123 @@ int main(int argc, const char*argv[]){
     uint32_t err_code=0;
     uint8_t*message=0;
     if(0 == (err_code = setjmp(main_exception_ctx))){
-        uint8_t entropy[32] = {0};
-        const uint8_t nonce[32] = {0};
-        dump(&hdrbg_seed,sizeof hdrbg_seed);
-        memcpy(entropy,&hdrbg_seed,sizeof hdrbg_seed);
-        struct hdrbg_t *drbg = hdrbg_init2(0,entropy,sizeof entropy, nonce, sizeof nonce,0,0);
-        if(NULL==drbg) throw_exception(__LINE__);
-        uint8_t seed[32];
-        hdrbg_fill(drbg,0,seed,sizeof seed);
-        dump(seed,sizeof seed);
-        //const uint8_t seed[32] = {0xc4, 0x44, 0x46, 0xb2, 0xec, 0x12, 0x9e, 0x35, 0x06, 0x92, 0xe6, 0xb7, 0xde, 0x6e, 0xe9, 0x44, 0xef, 0xfc, 0xa4, 0x1a, 0x55, 0x73, 0x50, 0x54, 0xc5, 0x48, 0x6a, 0x98, 0x52, 0xc9, 0x41, 0xdf};
-        uint8_t pk[pksize];
-        uint8_t sk[sksize];
+      uint8_t entropy[32] = {0};
+      const uint8_t nonce[32] = {0};
+      dump(&hdrbg_seed,sizeof hdrbg_seed);
+      memcpy(entropy,&hdrbg_seed,sizeof hdrbg_seed);
+      struct hdrbg_t *drbg = hdrbg_init2(0,entropy,sizeof entropy, nonce, sizeof nonce,0,0);
+      if(NULL==drbg) throw_exception(__LINE__);
+      struct hdrbg_t drbg_msg;
+      memcpy(&drbg_msg,drbg,sizeof(struct hdrbg_t));
+      uint8_t seed[32];
+      hdrbg_fill(drbg,0,seed,sizeof seed);
+      dump(seed,sizeof seed);
+      uint8_t pk[pksize];
+      uint8_t sk[sksize];
+      switch(mldsa_pset){
+        case 44: if(mldsa44_keypair_internal(pk, sk, seed)){
+            throw_exception(__LINE__);
+          }
+          break;
+        case 65: if(mldsa65_keypair_internal(pk, sk, seed)){
+            throw_exception(__LINE__);
+          }
+          break;
+        case 87: if(mldsa87_keypair_internal(pk, sk, seed)){
+            throw_exception(__LINE__);
+          }
+          break;
+        default:
+          throw_exception(__LINE__);
+      }
+      dump(&sk,sizeof(sk));
+      dump(&pk,sizeof(pk));
+      const unsigned int ctx_size = 0;
+      printf("%u\n",mldsa_pset);
+      printf("%u\n",ctx_size);
+      printf("%lu\n",message_size);
+      message = malloc(message_size);
+      if(!message) throw_exception(__LINE__);
+      //drbg_get_bytes(&ccore_deterministic_mode_ctx, message,message_size);
+      //for(unsigned int i = 0; i < message_size; i++){message[i] = 1+(i%8);}
+      memset(message,0,message_size);
+      uint8_t sig[sigsize];
+      uint32_t sum_z=0;
+      uint32_t sum_r=0;
+      uint32_t n_aborts_z=0,n_aborts_r=0, n_aborts_t0=0,n_aborts_h=0;
+      for(uint64_t i=0;i<ntrials;i++){
+        struct hdrbg_t drbg_msg_tmp;
+        memcpy(&drbg_msg_tmp,&drbg_msg,sizeof(struct hdrbg_t));//fork drbg_msg
+        hdrbg_fill2(&drbg_msg_tmp,0,message,8,(uint8_t*)&i,sizeof i);//inject trial counter to get a unique message that we can jump to easily
+        //dump(message,8);
+        uint32_t mldsa_native_repetitions;
+        uint32_t*causes=0;
         switch(mldsa_pset){
-          case 44: if(mldsa44_keypair_internal(pk, sk, seed)){
+          case 44: if(mldsa44_signature(sig,&sigsize,message, message_size, 0, 0, sk)){
               throw_exception(__LINE__);
             }
+            mldsa_native_repetitions=PQCP_MLDSA_NATIVE_MLDSA44_mldsa_native_repetitions;
+            causes = PQCP_MLDSA_NATIVE_MLDSA44_mldsa_native_repetitions_causes;
             break;
-          case 65: if(mldsa65_keypair_internal(pk, sk, seed)){
+          case 65: if(mldsa65_signature(sig,&sigsize,message, message_size, 0, 0, sk)){
               throw_exception(__LINE__);
             }
+            mldsa_native_repetitions=PQCP_MLDSA_NATIVE_MLDSA65_mldsa_native_repetitions;
+            causes = PQCP_MLDSA_NATIVE_MLDSA65_mldsa_native_repetitions_causes;
             break;
-          case 87: if(mldsa87_keypair_internal(pk, sk, seed)){
+          case 87: if(mldsa87_signature(sig,&sigsize,message, message_size, 0, 0, sk)){
               throw_exception(__LINE__);
             }
+            mldsa_native_repetitions=PQCP_MLDSA_NATIVE_MLDSA87_mldsa_native_repetitions;
+            causes = PQCP_MLDSA_NATIVE_MLDSA87_mldsa_native_repetitions_causes;
             break;
           default:
             throw_exception(__LINE__);
         }
-        dump(&sk,sizeof(sk));
-        dump(&pk,sizeof(pk));
-        const unsigned int ctx_size = 0;
-        printf("%u\n",mldsa_pset);
-        printf("%u\n",ctx_size);
-        printf("%lu\n",message_size);
-        message = malloc(message_size);
-        if(!message) throw_exception(__LINE__);
-        //drbg_get_bytes(&ccore_deterministic_mode_ctx, message,message_size);
-        //for(unsigned int i = 0; i < message_size; i++){message[i] = 1+(i%8);}
-        memset(message,0,message_size);
-        uint8_t sig[sigsize];
-        uint32_t sum_z=0;
-        uint32_t sum_r=0;
-        uint32_t n_aborts_z=0,n_aborts_r=0, n_aborts_t0=0,n_aborts_h=0;
-        for(unsigned int i=0;i<1000*1000;i++){
-            //if(mldsa87_signature(sig,&sigsize,message, message_size, 0, 0, sk)) throw_exception(__LINE__);
-            uint32_t mldsa_native_repetitions;
-            uint32_t*causes=0;
-            switch(mldsa_pset){
-              case 44: if(mldsa44_signature(sig,&sigsize,message, message_size, 0, 0, sk)){
-                  throw_exception(__LINE__);
-                }
-                mldsa_native_repetitions=PQCP_MLDSA_NATIVE_MLDSA44_mldsa_native_repetitions;
-                causes = PQCP_MLDSA_NATIVE_MLDSA44_mldsa_native_repetitions_causes;
-                break;
-              case 65: if(mldsa65_signature(sig,&sigsize,message, message_size, 0, 0, sk)){
-                  throw_exception(__LINE__);
-                }
-                mldsa_native_repetitions=PQCP_MLDSA_NATIVE_MLDSA65_mldsa_native_repetitions;
-                causes = PQCP_MLDSA_NATIVE_MLDSA65_mldsa_native_repetitions_causes;
-                break;
-              case 87: if(mldsa87_signature(sig,&sigsize,message, message_size, 0, 0, sk)){
-                  throw_exception(__LINE__);
-                }
-                mldsa_native_repetitions=PQCP_MLDSA_NATIVE_MLDSA87_mldsa_native_repetitions;
-                causes = PQCP_MLDSA_NATIVE_MLDSA87_mldsa_native_repetitions_causes;
-                break;
-              default:
+        //dump(&sig,sizeof(sig));
+        //if(mldsa87_verify(sig,sigsize,message, message_size,0,0,pk)) throw_exception(__LINE__);
+        if(verify){
+          switch(mldsa_pset){
+            case 44: if(mldsa44_verify(sig,sigsize,message, message_size, 0, 0, pk)){
                 throw_exception(__LINE__);
-            }
-            //dump(&sig,sizeof(sig));
-            //if(mldsa87_verify(sig,sigsize,message, message_size,0,0,pk)) throw_exception(__LINE__);
-            if(verify){
-              switch(mldsa_pset){
-                case 44: if(mldsa44_verify(sig,sigsize,message, message_size, 0, 0, pk)){
-                    throw_exception(__LINE__);
-                  }
-                  break;
-                case 65: if(mldsa65_verify(sig,sigsize,message, message_size, 0, 0, pk)){
-                    throw_exception(__LINE__);
-                  }
-                  break;
-                case 87: if(mldsa87_verify(sig,sigsize,message, message_size, 0, 0, pk)){
-                    throw_exception(__LINE__);
-                  }
-                  break;
-                default:
-                  throw_exception(__LINE__);
               }
-            }
-            //printf("repetitions = %u\n",mldsa_native_repetitions);
-            if(log_aborts){
-              n_aborts_z=causes[0];
-              n_aborts_r=causes[1];
-              n_aborts_t0=causes[2];
-              n_aborts_h=causes[3];
-              sum_z += n_aborts_z;
-              sum_r += n_aborts_r;
-              printf("%2u, %2u, %2u, %2u, %2u, %5u, %5u\n",mldsa_native_repetitions,n_aborts_z,n_aborts_r, n_aborts_t0,n_aborts_h,sum_z,sum_r);
-            }else{
-              printf("%2u\n",mldsa_native_repetitions);
-            }
-            hdrbg_fill(drbg,0,message,8);
+              break;
+            case 65: if(mldsa65_verify(sig,sigsize,message, message_size, 0, 0, pk)){
+                throw_exception(__LINE__);
+              }
+              break;
+            case 87: if(mldsa87_verify(sig,sigsize,message, message_size, 0, 0, pk)){
+                throw_exception(__LINE__);
+              }
+              break;
+            default:
+              throw_exception(__LINE__);
+          }
         }
+        //printf("repetitions = %u\n",mldsa_native_repetitions);
+        if(mldsa_native_repetitions >= min_repetitions){
+          if(log_aborts){
+            n_aborts_z=causes[0];
+            n_aborts_r=causes[1];
+            n_aborts_t0=causes[2];
+            n_aborts_h=causes[3];
+            sum_z += n_aborts_z;
+            sum_r += n_aborts_r;
+            printf("\r%10lu, %2u, %2u, %2u, %2u, %2u, %5u, %5u\n",i,mldsa_native_repetitions,n_aborts_z,n_aborts_r, n_aborts_t0,n_aborts_h,sum_z,sum_r);
+          }else{
+            printf("\r%10lu,%2u\n",i,mldsa_native_repetitions);
+          }
+          if(min_repetitions>1){
+            min_repetitions = mldsa_native_repetitions + 1;
+          }
+        }else{
+          if(0==(i%(1024*1024))){
+            printf("\r%10lu",i);
+            fflush(stdout);
+          }
+        }
+        //hdrbg_fill(drbg,0,message,8);
+      }
     } else {
       //exception
       printf("EXCEPTION: %u (0x%x)\n",err_code,err_code);
