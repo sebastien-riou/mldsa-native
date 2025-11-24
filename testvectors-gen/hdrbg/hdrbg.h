@@ -14,7 +14,16 @@
 #include <stddef.h>
 #endif
 
-struct hdrbg_t;
+#define HDRBG_SEED_LENGTH 55
+
+struct hdrbg_t
+{
+    // The first member is prepended with a byte whenever it is processed, so
+    // keep an extra byte.
+    uint8_t V[1 + HDRBG_SEED_LENGTH];
+    uint8_t C[HDRBG_SEED_LENGTH];
+    uint64_t gen_count;
+};
 enum hdrbg_err_t
 {
     HDRBG_ERR_NONE,
@@ -43,6 +52,8 @@ extern "C"
     );
     struct hdrbg_t *hdrbg_reinit(struct hdrbg_t *hd);
     int hdrbg_fill(struct hdrbg_t *hd, bool prediction_resistance, uint8_t *r_bytes, int long unsigned r_length);
+    int hdrbg_fill2(struct hdrbg_t *hd, bool prediction_resistance, uint8_t *r_bytes, int long unsigned r_length, 
+                    const uint8_t*add_input, int long unsigned add_input_size);
     uint64_t hdrbg_rand(struct hdrbg_t *hd);
     uint64_t hdrbg_uint(struct hdrbg_t *hd, uint64_t modulus);
     int64_t hdrbg_span(struct hdrbg_t *hd, int64_t left, int64_t right);

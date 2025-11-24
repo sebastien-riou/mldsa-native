@@ -30,7 +30,7 @@ static enum hdrbg_err_t
     hdrbg_err
     = HDRBG_ERR_NONE;
 
-#define HDRBG_SEED_LENGTH 55
+
 #define HDRBG_SECURITY_STRENGTH 32
 #define HDRBG_NONCE1_LENGTH 8
 #define HDRBG_NONCE2_LENGTH 8
@@ -43,14 +43,7 @@ static enum hdrbg_err_t
 #define HDRBG_TV_NONCE_LENGTH 16
 #define HDRBG_TV_REQUEST_LENGTH 128
 
-struct hdrbg_t
-{
-    // The first member is prepended with a byte whenever it is processed, so
-    // keep an extra byte.
-    uint8_t V[1 + HDRBG_SEED_LENGTH];
-    uint8_t C[HDRBG_SEED_LENGTH];
-    uint64_t gen_count;
-};
+
 static struct hdrbg_t hdrbg;
 
 /******************************************************************************
@@ -283,23 +276,32 @@ hdrbg_reinit(struct hdrbg_t *hd)
  * Generate cryptographically secure pseudorandom bytes.
  *****************************************************************************/
 int
-hdrbg_fill(struct hdrbg_t *hd, bool prediction_resistance, uint8_t *r_bytes, int long unsigned r_length)
+hdrbg_fill2(struct hdrbg_t *hd, bool prediction_resistance, uint8_t *r_bytes, int long unsigned r_length, 
+    const uint8_t*add_input, int long unsigned add_input_size)
 {
-    if (r_length > HDRBG_REQUEST_LIMIT)
-    {
+    if (r_length > HDRBG_REQUEST_LIMIT){
         hdrbg_err = HDRBG_ERR_INVALID_REQUEST_FILL;
         return -1;
     }
     hd = hd == NULL ? &hdrbg : hd;
-    if (prediction_resistance || hd->gen_count == HDRBG_RESEED_INTERVAL)
-    {
-        if (hdrbg_reinit(hd) == NULL)
-        {
+    if (prediction_resistance || hd->gen_count == HDRBG_RESEED_INTERVAL){
+        if (hdrbg_reinit(hd) == NULL){
             return -1;
         }
     }
-    if (r_length > 0)
-    {
+
+    if(add_input_size){
+        // Mutate the state.
+        uint8_t buf[1+HDRBG_SEED_LENGTH+add_input_size];
+        buf[0] = 0x02U;
+        memcpy(buf+1,hd->V+1,HDRBG_SEED_LENGTH);
+        memcpy(buf+1+HDRBG_SEED_LENGTH,add_input,add_input_size);
+        uint8_t tmp[HDRBG_OUTPUT_LENGTH];
+        sha256(buf, sizeof buf, tmp);
+        add_accumulate(hd->V + 1, HDRBG_SEED_LENGTH, tmp, HDRBG_OUTPUT_LENGTH);
+    }
+
+    if (r_length > 0){
         hash_gen(hd->V + 1, r_bytes, r_length);
     }
 
@@ -314,7 +316,10 @@ hdrbg_fill(struct hdrbg_t *hd, bool prediction_resistance, uint8_t *r_bytes, int
     add_accumulate(hd->V + 1, HDRBG_SEED_LENGTH, gen_count, 8);
     return 0;
 }
-
+int
+hdrbg_fill(struct hdrbg_t *hd, bool prediction_resistance, uint8_t *r_bytes, int long unsigned r_length){
+    return hdrbg_fill2(hd,prediction_resistance, r_bytes, r_length, 0, 0);
+}
 /******************************************************************************
  * Helper for `hdrbg_rand`.
  *
