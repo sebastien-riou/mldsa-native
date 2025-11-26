@@ -129,7 +129,7 @@ void throw_exception(uint32_t err_code){
 int main(int argc, const char*argv[]){
     uint64_t hdrbg_seed = 0;
     size_t message_size = 69;
-    unsigned int only1 = 1;
+    unsigned int only1 = 0;
     unsigned int mldsa44 = 0;
     unsigned int mldsa65 = 0;
     unsigned int mldsa87 = 0;
@@ -384,5 +384,6 @@ int main(int argc, const char*argv[]){
     if(message){
       free(message);
     }
+    printf("\ndone.\n");
     return 0;
 }
