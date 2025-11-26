@@ -129,6 +129,7 @@ void throw_exception(uint32_t err_code){
 int main(int argc, const char*argv[]){
     uint64_t hdrbg_seed = 0;
     size_t message_size = 69;
+    unsigned int only1 = 1;
     unsigned int mldsa44 = 0;
     unsigned int mldsa65 = 0;
     unsigned int mldsa87 = 0;
@@ -197,6 +198,11 @@ int main(int argc, const char*argv[]){
       if(0==memcmp(argv[i],min_repetitions_str,strlen(min_repetitions_str))){
         const char*min_repetitions_val_str = argv[i]+strlen(min_repetitions_str);
         min_repetitions = strtoull(min_repetitions_val_str,0,0);
+        continue;
+      }
+      const char*only1_str = "--only-1-repetition";
+      if(0==memcmp(argv[i],only1_str,strlen(only1_str))){
+        only1 = 1;
         continue;
       }
       const char*mldsa44_str = "mldsa44";
@@ -348,6 +354,7 @@ int main(int argc, const char*argv[]){
         }
         //printf("repetitions = %u\n",mldsa_native_repetitions);
         if(mldsa_native_repetitions >= min_repetitions){
+          if(only1 && mldsa_native_repetitions > 1) continue;
           if(log_aborts){
             n_aborts_z=causes[0];
             n_aborts_r=causes[1];
@@ -359,6 +366,7 @@ int main(int argc, const char*argv[]){
           }else{
             printf("\r%10lu,%2u\n",i,mldsa_native_repetitions);
           }
+          if(only1) break;
           if(min_repetitions>1){
             min_repetitions = mldsa_native_repetitions + 1;
           }
@@ -368,7 +376,6 @@ int main(int argc, const char*argv[]){
             fflush(stdout);
           }
         }
-        //hdrbg_fill(drbg,0,message,8);
       }
     } else {
       //exception
