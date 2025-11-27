@@ -8,6 +8,8 @@ NTRIALS=$3
 SEED=$4
 PARALLEL=$5
 
+mkdir -p results
+
 for (( i=0; i<$PARALLEL; i+=1 ))
 do
     set -x
