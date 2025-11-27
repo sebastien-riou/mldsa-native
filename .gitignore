@@ -8,6 +8,7 @@ testvectors-gen/results
 *.a
 a.out
 *.tar.xz
+*.tar.gz
 __pycache__
 *_git_ignore
 mldsa-tv-gen
