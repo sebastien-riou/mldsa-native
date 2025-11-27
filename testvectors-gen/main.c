@@ -130,7 +130,6 @@ int main(int argc, const char*argv[]){
     uint64_t hdrbg_seed = 0;
     uint64_t offset = 0;
     size_t message_size = 69;
-    unsigned int only1 = 0;
     unsigned int mldsa44 = 0;
     unsigned int mldsa65 = 0;
     unsigned int mldsa87 = 0;
@@ -138,6 +137,7 @@ int main(int argc, const char*argv[]){
     unsigned int verify = 0;
     uint64_t ntrials = 1000*1000;
     unsigned int min_repetitions = 1;
+    unsigned int exact_repetitions = 0;
 /*
     {
       uint8_t entropy[32] = {0};
@@ -207,9 +207,9 @@ int main(int argc, const char*argv[]){
         min_repetitions = strtoull(min_repetitions_val_str,0,0);
         continue;
       }
-      const char*only1_str = "--only-1-repetition";
-      if(0==memcmp(argv[i],only1_str,strlen(only1_str))){
-        only1 = 1;
+      const char*exact_str = "--exact-repetitions";
+      if(0==memcmp(argv[i],exact_str,strlen(exact_str))){
+        exact_repetitions = 1;
         continue;
       }
       const char*mldsa44_str = "mldsa44";
@@ -362,7 +362,7 @@ int main(int argc, const char*argv[]){
         }
         //printf("repetitions = %u\n",mldsa_native_repetitions);
         if(mldsa_native_repetitions >= min_repetitions){
-          if(only1 && mldsa_native_repetitions > 1) continue;
+          if(exact_repetitions && (mldsa_native_repetitions != min_repetitions)) continue;
           if(log_aborts){
             n_aborts_z=causes[0];
             n_aborts_r=causes[1];
@@ -374,7 +374,7 @@ int main(int argc, const char*argv[]){
           }else{
             printf("\r%10lu,%2u\n",idx,mldsa_native_repetitions);
           }
-          if(only1) break;
+          if(exact_repetitions) break;
           if(min_repetitions>1){
             min_repetitions = mldsa_native_repetitions + 1;
           }
