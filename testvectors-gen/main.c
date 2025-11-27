@@ -128,6 +128,7 @@ void throw_exception(uint32_t err_code){
 #define MLDSA87 4
 int main(int argc, const char*argv[]){
     uint64_t hdrbg_seed = 0;
+    uint64_t offset = 0;
     size_t message_size = 69;
     unsigned int only1 = 0;
     unsigned int mldsa44 = 0;
@@ -168,6 +169,12 @@ int main(int argc, const char*argv[]){
       if(0==memcmp(argv[i],seed_str,strlen(seed_str))){
         const char*seed_val_str = argv[i]+strlen(seed_str);
         hdrbg_seed = strtoul(seed_val_str,0,0);
+        continue;
+      }
+      const char*offset_str = "--offset=";
+      if(0==memcmp(argv[i],offset_str,strlen(offset_str))){
+        const char*offset_val_str = argv[i]+strlen(offset_str);
+        offset = strtoul(offset_val_str,0,0);
         continue;
       }
       const char*msgsize_str = "--msg-size=";
@@ -304,9 +311,10 @@ int main(int argc, const char*argv[]){
       uint32_t sum_r=0;
       uint32_t n_aborts_z=0,n_aborts_r=0, n_aborts_t0=0,n_aborts_h=0;
       for(uint64_t i=0;i<ntrials;i++){
+        uint64_t idx = i+offset;
         struct hdrbg_t drbg_msg_tmp;
         memcpy(&drbg_msg_tmp,&drbg_msg,sizeof(struct hdrbg_t));//fork drbg_msg
-        hdrbg_fill2(&drbg_msg_tmp,0,message,8,(uint8_t*)&i,sizeof i);//inject trial counter to get a unique message that we can jump to easily
+        hdrbg_fill2(&drbg_msg_tmp,0,message,8,(uint8_t*)&idx,sizeof idx);//inject trial counter to get a unique message that we can jump to easily
         //dump(message,8);
         uint32_t mldsa_native_repetitions;
         uint32_t*causes=0;
@@ -362,9 +370,9 @@ int main(int argc, const char*argv[]){
             n_aborts_h=causes[3];
             sum_z += n_aborts_z;
             sum_r += n_aborts_r;
-            printf("\r%10lu, %2u, %2u, %2u, %2u, %2u, %5u, %5u\n",i,mldsa_native_repetitions,n_aborts_z,n_aborts_r, n_aborts_t0,n_aborts_h,sum_z,sum_r);
+            printf("\r%10lu, %2u, %2u, %2u, %2u, %2u, %5u, %5u\n",idx,mldsa_native_repetitions,n_aborts_z,n_aborts_r, n_aborts_t0,n_aborts_h,sum_z,sum_r);
           }else{
-            printf("\r%10lu,%2u\n",i,mldsa_native_repetitions);
+            printf("\r%10lu,%2u\n",idx,mldsa_native_repetitions);
           }
           if(only1) break;
           if(min_repetitions>1){
