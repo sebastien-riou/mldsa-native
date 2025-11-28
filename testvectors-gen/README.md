@@ -4,7 +4,7 @@
 
 1. use `buildit` script to build the native program, i.e. `./buildit`
 2. use `search` script to find a high repetition count case, i.e. `./search 44 50 2M 00 2`
-3. use `log_aborts_long_msg_sizes` script to find single repetition cases for the same hdrbg seed, i.e. `./log_aborts_long_msg_sizes 44 00`
+3. use `log_aborts_long_msg_sizes` script to find single repetition cases for long messages, i.e. `./log_aborts_long_msg_sizes 44 00`
 4. use `mldsa-sign-tvgen.py` script to generate the test vectors, i.e. `pipenv run python mldsa-sign-tvgen.py --read-log results/`
 
 ## How to use the test vectors

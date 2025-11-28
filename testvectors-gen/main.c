@@ -265,6 +265,14 @@ int main(int argc, const char*argv[]){
 
     uint32_t err_code=0;
     uint8_t*message=0;
+    uint64_t sum_rep=0,total_sum_rep=0;
+    uint64_t sum_z=0,total_sum_z=0;
+    uint64_t sum_r=0, total_sum_r=0;
+    uint64_t sum_t0=0,total_sum_t0=0;
+    uint64_t sum_h=0, total_sum_h=0;
+    uint64_t reported_cnt=0;
+    uint64_t trials_cnt=0;
+    uint32_t max_repetitions=0;
     if(0 == (err_code = setjmp(main_exception_ctx))){
       uint8_t entropy[32] = {0};
       const uint8_t nonce[32] = {0};
@@ -307,9 +315,6 @@ int main(int argc, const char*argv[]){
       //for(unsigned int i = 0; i < message_size; i++){message[i] = 1+(i%8);}
       memset(message,0,message_size);
       uint8_t sig[sigsize];
-      uint32_t sum_z=0;
-      uint32_t sum_r=0;
-      uint32_t n_aborts_z=0,n_aborts_r=0, n_aborts_t0=0,n_aborts_h=0;
       for(uint64_t i=0;i<ntrials;i++){
         uint64_t idx = i+offset;
         struct hdrbg_t drbg_msg_tmp;
@@ -360,17 +365,28 @@ int main(int argc, const char*argv[]){
               throw_exception(__LINE__);
           }
         }
+        trials_cnt++;
+        total_sum_rep += mldsa_native_repetitions;
+        if(max_repetitions<mldsa_native_repetitions) max_repetitions=mldsa_native_repetitions;
+        total_sum_z += causes[0];
+        total_sum_r += causes[1];
+        total_sum_t0+= causes[2];
+        total_sum_h += causes[3];
         //printf("repetitions = %u\n",mldsa_native_repetitions);
         if(mldsa_native_repetitions >= min_repetitions){
           if(exact_repetitions && (mldsa_native_repetitions != min_repetitions)) continue;
+          reported_cnt++;
+          uint32_t n_aborts_z=causes[0];
+          uint32_t n_aborts_r=causes[1];
+          uint32_t n_aborts_t0=causes[2];
+          uint32_t n_aborts_h=causes[3];
+          sum_rep += mldsa_native_repetitions;
+          sum_z += n_aborts_z;
+          sum_r += n_aborts_r;
+          sum_t0 += n_aborts_t0;
+          sum_h += n_aborts_h;
           if(log_aborts){
-            n_aborts_z=causes[0];
-            n_aborts_r=causes[1];
-            n_aborts_t0=causes[2];
-            n_aborts_h=causes[3];
-            sum_z += n_aborts_z;
-            sum_r += n_aborts_r;
-            printf("\r%10lu, %2u, %2u, %2u, %2u, %2u, %5u, %5u\n",idx,mldsa_native_repetitions,n_aborts_z,n_aborts_r, n_aborts_t0,n_aborts_h,sum_z,sum_r);
+            printf("\r%10lu, %2u, %2u, %2u, %2u, %2u, %5lu, %5lu\n",idx,mldsa_native_repetitions,n_aborts_z,n_aborts_r, n_aborts_t0,n_aborts_h,sum_z,sum_r);
           }else{
             printf("\r%10lu,%2u\n",idx,mldsa_native_repetitions);
           }
@@ -392,6 +408,14 @@ int main(int argc, const char*argv[]){
     if(message){
       free(message);
     }
-    printf("\ndone.\n");
+    printf("\n");
+    printf("Stats over the %lu reported cases:\n", reported_cnt);
+    printf("\tSums: repetitions=%lu, z=%lu, r=%lu, t0=%lu, h=%lu\n", sum_rep,sum_z, sum_r, sum_t0, sum_h);
+    printf("\tAverages: repetitions=%f, z=%f, r=%f, t0=%f, h=%f\n",((double)sum_rep)/reported_cnt,((double)sum_z)/reported_cnt, ((double)sum_r)/reported_cnt, ((double)sum_t0)/reported_cnt, ((double)sum_h)/reported_cnt);
+    printf("Stats over all %lu trials:\n", trials_cnt);
+    printf("\tSums: repetitions=%lu, z=%lu, r=%lu, t0=%lu, h=%lu\n", total_sum_rep,total_sum_z, total_sum_r, total_sum_t0, total_sum_h);
+    printf("\tAverages: repetitions=%f, z=%f, r=%f, t0=%f, h=%f\n",((double)total_sum_rep)/trials_cnt,((double)total_sum_z)/trials_cnt, ((double)total_sum_r)/trials_cnt, ((double)total_sum_t0)/trials_cnt, ((double)total_sum_h)/trials_cnt);
+    printf("\tMaximum repetitions: %u\n",max_repetitions);
+    printf("done.\n");
     return 0;
 }
