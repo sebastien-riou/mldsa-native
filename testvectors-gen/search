@@ -13,6 +13,6 @@ mkdir -p results
 for (( i=0; i<$PARALLEL; i+=1 ))
 do
     set -x
-    ./mldsa-tv-gen mldsa$PSET --min-repetitions=$MIN_REPETITIONS --hdrbg-seed=$i$SEED --n-trials=$NTRIALS > results/mldsa${PSET}-s${i}${SEED}.log &
+    ./mldsa-tv-gen mldsa$PSET --min-repetitions=$MIN_REPETITIONS --hdrbg-seed=$i$SEED --n-trials=$NTRIALS ${@: 6} > results/mldsa${PSET}-s${i}${SEED}.log &
     set +x
 done
