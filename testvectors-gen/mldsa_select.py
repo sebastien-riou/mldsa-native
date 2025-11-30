@@ -26,6 +26,7 @@ def select_testvectors(data,*,only1 = False, check_flare = False,dst_dir=None):
             raise RuntimeError()
 
     entropy = data['hdrbg seed']+bytes(24)
+    logging.debug(f'entropy: {Utils.hexstr(entropy)}')
     drbg = hdrbg.DRBG_SHA2_256(entropy=entropy,nonce=bytes(32))
     drbg_msg = copy.deepcopy(drbg)
     dut = Dilithium(paramset=data['mldsa pset'])
@@ -34,8 +35,8 @@ def select_testvectors(data,*,only1 = False, check_flare = False,dst_dir=None):
     #print(Utils.hexstr(zeta))
 
     pk, sk = dut.keygen(zeta=zeta)
-    #print(f'private key = {Utils.hexstr(sk)}')
-    #print(f'private key = {Utils.hexstr(pk)}')
+    logging.debug(f'private key = {Utils.hexstr(sk)}')
+    logging.debug(f'private key = {Utils.hexstr(pk)}')
     if pk != data['pk']:
         raise RuntimeError('pk does not match')
     if sk != data['sk']:
@@ -51,22 +52,20 @@ def select_testvectors(data,*,only1 = False, check_flare = False,dst_dir=None):
 
         rnd = bytes(32)
         sig = dut.sign(sk,message,rnd,sign_external=True)
-        logging.debug(f'{idx:5} {dut.nr_sign_iterations:3} {dut.check_z_fail:2} {dut.check_r_fail:2} {dut.check_t0_fail:2} {dut.check_h_fail:2}')
+        logging.debug(f'{idx:5} {dut.nr_sign_iterations:3} {dut.check_z_fail:2} {dut.check_r_fail:2} {dut.check_t0_fail:2} {dut.check_h_fail:2} {Utils.hexstr(message[0:8])}')
         return {'sig':sig, 'repetitions':dut.nr_sign_iterations}
         
-    if (1 == len(data['repetitions']) and not only1):
+    if (len(data['repetitions'])<300 and not only1):
         # we have only one test vector, generate additional test vectors
         for i in range(0,300):
             idx_data = index_to_data(i)
             data['iterations'].append(i)
             data['repetitions'].append(idx_data['repetitions'])
 
-    nloops = data['repetitions']
+    max_loops = max(data['repetitions'])
+    min_loops = min(data['repetitions'])
 
-    max_loops = max(nloops)
-    min_loops = min(nloops)
-
-    print(f'{len(nloops)} signatures: repetitions between {min_loops} and {max_loops} included')
+    print(f'{len(data['repetitions'])} signatures: repetitions between {min_loops} and {max_loops} included')
 
     if min_loops > 1:
         raise RuntimeError("the data set does not contain the minimal number of repetition")
@@ -137,10 +136,12 @@ def select_testvectors(data,*,only1 = False, check_flare = False,dst_dir=None):
         selection()
 
     print(len(selected))
+    logging.debug(str(selected))
     print(f'average = {selected_ave}')
 
     indexes = list(selected.keys())
     indexes.sort()
+    logging.debug(str(indexes))
     
     if check_flare:
         from parse_flare_sig_log import parse_flare_sig_log
