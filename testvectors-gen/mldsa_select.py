@@ -7,7 +7,19 @@ import logging
 from pysatl import Utils
 
 import gen_mldsa_inputs
-from dilithium_py import Dilithium
+from dilithium_py.ml_dsa import default_parameters
+
+
+def get_mldsa_impl(paramset:int):
+    match(paramset):
+        case 44:
+            return default_parameters.ML_DSA_44
+        case 65:
+            return default_parameters.ML_DSA_65
+        case 87:
+            return default_parameters.ML_DSA_87
+        case _:
+            raise NotImplementedError(f'Unsupported parameter set {paramset}')
 
 #find a set of data inputs which include:
 #- min repetition number (1)
@@ -29,12 +41,12 @@ def select_testvectors(data,*,only1 = False, check_flare = False,dst_dir=None):
     logging.debug(f'entropy: {Utils.hexstr(entropy)}')
     drbg = hdrbg.DRBG_SHA2_256(entropy=entropy,nonce=bytes(32))
     drbg_msg = copy.deepcopy(drbg)
-    dut = Dilithium(paramset=data['mldsa pset'])
+    dut = get_mldsa_impl(paramset=data['mldsa pset'])
     zeta = bytearray()
     zeta += drbg.get_bytes(32)
     #print(Utils.hexstr(zeta))
 
-    pk, sk = dut.keygen(zeta=zeta)
+    pk, sk = dut.key_derive(seed=zeta)
     logging.debug(f'private key = {Utils.hexstr(sk)}')
     logging.debug(f'private key = {Utils.hexstr(pk)}')
     if pk != data['pk']:
@@ -50,8 +62,7 @@ def select_testvectors(data,*,only1 = False, check_flare = False,dst_dir=None):
         drbg_msg_tmp = copy.deepcopy(drbg_msg)
         message[0:8] = drbg_msg_tmp.get_bytes(8,additional_input=idx.to_bytes(8,byteorder='little')) 
 
-        rnd = bytes(32)
-        sig = dut.sign(sk,message,rnd,sign_external=True)
+        sig = dut.sign(sk=sk,m=message,ctx=bytes(0),deterministic=True)
         logging.debug(f'{idx:5} {dut.nr_sign_iterations:3} {dut.check_z_fail:2} {dut.check_r_fail:2} {dut.check_t0_fail:2} {dut.check_h_fail:2} {Utils.hexstr(message[0:8])}')
         return {'sig':sig, 'repetitions':dut.nr_sign_iterations}
         
