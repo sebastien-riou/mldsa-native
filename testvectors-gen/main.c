@@ -386,14 +386,17 @@ int main(int argc, const char*argv[]){
           sum_t0 += n_aborts_t0;
           sum_h += n_aborts_h;
           if(log_aborts){
+            //uint64_t msg64;
+            //memcpy(&msg64,message,sizeof msg64);
+            //printf("\r%10lu, %2u, %2u, %2u, %2u, %2u, %5lu, %5lu, 0x%016lx\n",idx,mldsa_native_repetitions,n_aborts_z,n_aborts_r, n_aborts_t0,n_aborts_h,sum_z,sum_r,msg64);
             printf("\r%10lu, %2u, %2u, %2u, %2u, %2u, %5lu, %5lu\n",idx,mldsa_native_repetitions,n_aborts_z,n_aborts_r, n_aborts_t0,n_aborts_h,sum_z,sum_r);
           }else{
             printf("\r%10lu,%2u\n",idx,mldsa_native_repetitions);
           }
-          if(exact_repetitions) break;
-          if(min_repetitions>1){
-            min_repetitions = mldsa_native_repetitions + 1;
-          }
+          //if(exact_repetitions) break;
+          //if(min_repetitions>1){
+          //  min_repetitions = mldsa_native_repetitions + 1;
+          //}
         }else{
           if(0==(i%(1024*1024))){
             printf("\r%10lu",i);
