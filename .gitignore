@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0 OR ISC OR MIT
 
 test/build
+build/
 .direnv
 # Downloaded ACVP test data
 test/.acvp-data/
