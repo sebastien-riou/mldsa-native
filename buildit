@@ -1,0 +1,5 @@
+#!/bin/bash
+
+set -ex
+
+./scripts/tests kat --cflags=-DINSTRUMENTATION=1 --opt OPT --no-run
