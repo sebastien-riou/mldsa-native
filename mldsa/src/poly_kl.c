@@ -495,6 +495,36 @@ void mld_poly_uniform_gamma1_4x(mld_poly *r0, mld_poly *r1, mld_poly *r2,
 }
 #endif /* !MLD_CONFIG_SERIAL_FIPS202_ONLY */
 
+
+#ifndef INSTRUMENATION
+  #define INSTRUMENATION 0
+#endif
+
+#if INSTRUMENTATION
+  #ifndef INSTRUMENTATION_DECL_DONE
+    #define INSTRUMENTATION_DECL_DONE
+    uint32_t MLD_NAMESPACE(mldsa_native_sib_blocks);
+    uint32_t MLD_NAMESPACE(mldsa_native_sib_bytes);
+  #endif
+  #define BLOCKS_INC() do{\
+    MLD_NAMESPACE(mldsa_native_sib_blocks)++;\
+  }while(0)
+  #define BLOCKS_CLR() do{\
+    MLD_NAMESPACE(mldsa_native_sib_blocks)=1;\
+  }while(0)
+  #define BYTES_INC() do{\
+    MLD_NAMESPACE(mldsa_native_sib_bytes)++;\
+  }while(0)
+  #define BYTES_CLR() do{\
+    MLD_NAMESPACE(mldsa_native_sib_bytes)=1;\
+  }while(0)
+#else
+  #define BLOCKS_INC()
+  #define BLOCKS_CLR()
+  #define BYTES_INC()
+  #define BYTES_CLR()
+#endif
+
 MLD_INTERNAL_API
 void mld_poly_challenge(mld_poly *c, const uint8_t seed[MLDSA_CTILDEBYTES])
 {
@@ -508,7 +538,10 @@ void mld_poly_challenge(mld_poly *c, const uint8_t seed[MLDSA_CTILDEBYTES])
   mld_shake256_absorb(&state, seed, MLDSA_CTILDEBYTES);
   mld_shake256_finalize(&state);
   mld_shake256_squeeze(buf, SHAKE256_RATE, &state);
-
+  BLOCKS_CLR();
+  BLOCKS_INC();
+  BYTES_CLR();
+  
   /* Convert the first 8 bytes of buf[] into an unsigned 64-bit value.   */
   /* Each bit of that dictates the sign of the resulting challenge value */
   signs = 0;
@@ -544,8 +577,10 @@ void mld_poly_challenge(mld_poly *c, const uint8_t seed[MLDSA_CTILDEBYTES])
       if (pos >= SHAKE256_RATE)
       {
         mld_shake256_squeeze(buf, SHAKE256_RATE, &state);
+        BLOCKS_INC();
         pos = 0;
       }
+      BYTES_INC();
       j = buf[pos++];
     } while (j > i);
 
