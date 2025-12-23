@@ -510,13 +510,13 @@ void mld_poly_uniform_gamma1_4x(mld_poly *r0, mld_poly *r1, mld_poly *r2,
     MLD_NAMESPACE(mldsa_native_sib_blocks)++;\
   }while(0)
   #define BLOCKS_CLR() do{\
-    MLD_NAMESPACE(mldsa_native_sib_blocks)=1;\
+    MLD_NAMESPACE(mldsa_native_sib_blocks)=0;\
   }while(0)
   #define BYTES_INC() do{\
     MLD_NAMESPACE(mldsa_native_sib_bytes)++;\
   }while(0)
   #define BYTES_CLR() do{\
-    MLD_NAMESPACE(mldsa_native_sib_bytes)=1;\
+    MLD_NAMESPACE(mldsa_native_sib_bytes)=0;\
   }while(0)
 #else
   #define BLOCKS_INC()
