@@ -99,6 +99,27 @@ void mld_unpack_sk(uint8_t rho[MLDSA_SEEDBYTES], uint8_t tr[MLDSA_TRBYTES],
   mld_polyveck_unpack_t0(t0, sk);
 }
 
+#ifndef INSTRUMENATION
+  #define INSTRUMENATION 0
+#endif
+
+#if INSTRUMENTATION
+  #ifndef INSTRUMENTATION_DECL_DONE
+    #define INSTRUMENTATION_DECL_DONE
+    uint32_t MLD_NAMESPACE(mldsa_native_hbp_index);
+  #endif
+  #define HBP_INDEX_INC(cause) do{\
+    MLD_NAMESPACE(mldsa_native_hbp_index)++;\
+  }while(0)
+  #define HBP_INDEX_CLR() do{\
+    MLD_NAMESPACE(mldsa_native_hbp_index)=1;\
+  }while(0)
+#else
+  #define HBP_INDEX_INC()
+  #define HBP_INDEX_CLR()
+#endif
+
+
 MLD_INTERNAL_API
 void mld_pack_sig(uint8_t sig[CRYPTO_BYTES], const uint8_t c[MLDSA_CTILDEBYTES],
                   const mld_polyvecl *z, const mld_polyveck *h,
@@ -128,7 +149,7 @@ void mld_pack_sig(uint8_t sig[CRYPTO_BYTES], const uint8_t c[MLDSA_CTILDEBYTES],
    * to start.
    */
   mld_memset(sig, 0, MLDSA_POLYVECH_PACKEDBYTES);
-
+  HBP_INDEX_CLR();
   k = 0;
   /* For each polynomial in h... */
   for (i = 0; i < MLDSA_K; ++i)
@@ -160,6 +181,7 @@ void mld_pack_sig(uint8_t sig[CRYPTO_BYTES], const uint8_t c[MLDSA_CTILDEBYTES],
         /* that k < MLDSA_OMEGA, so writing to sig[k] is safe and k */
         /* can be incremented.                                      */
         sig[k++] = (uint8_t)j;
+        HBP_INDEX_INC();
       }
     }
     /* Having recorded all the hints for this polynomial, also   */
